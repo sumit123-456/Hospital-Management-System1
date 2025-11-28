@@ -4,11 +4,9 @@ FROM maven:3.9.6-eclipse-temurin-21 AS build
 # Set working directory inside the container
 WORKDIR /app
 
-# Copy only Maven configuration first (enables caching)
-COPY ./pom.xml ./pom.xml
-
-# Copy source code
-COPY ./src ./src
+# Copy Maven configuration and source code
+# The paths are relative to the build context (we will set context explicitly)
+COPY . .
 
 # Build the project without running tests
 RUN mvn -B package -DskipTests
