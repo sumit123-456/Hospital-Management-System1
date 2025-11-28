@@ -1,30 +1,28 @@
 # ===== Stage 1: Build =====
-FROM eclipse-temurin:21-jdk AS build
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 # Set working directory
 WORKDIR /app
 
-# Copy Maven wrapper and project files
-COPY mvnw .
-COPY .mvn .mvn
+# 1️⃣ Copy only pom.xml first to cache dependencies
 COPY pom.xml .
-COPY src ./src
-
-# Make mvnw executable
-RUN chmod +x mvnw
 
 # Download dependencies offline (cache layer)
-RUN ./mvnw dependency:go-offline -B
+RUN mvn dependency:go-offline -B
 
-# Build the project without tests
-RUN ./mvnw -B package -DskipTests -DfinalName=hospital-app
+# 2️⃣ Copy the source code
+COPY src ./src
+
+# 3️⃣ Build the project without tests
+# Explicitly specify the final JAR name
+RUN mvn -B package -DskipTests -DfinalName=hospital-app
 
 # ===== Stage 2: Runtime =====
 FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-# Copy the built JAR from build stage
+# Copy the built JAR from the build stage
 COPY --from=build /app/target/hospital-app.jar app.jar
 
 # Expose default Spring Boot port
